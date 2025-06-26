@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/yourname/jewish_calendar_plus",
   "requirements": [
-    "hebcal==1.4.1"
+    "hdate>=1.1.0"
   ],
   "iot_class": "local_push",
   "codeowners": ["@yourgithubhandle"]

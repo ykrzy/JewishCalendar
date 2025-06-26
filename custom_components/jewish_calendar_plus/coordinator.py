@@ -1,93 +1,115 @@
-# =============================================================
-# file: coordinator.py
-# =============================================================
-"""Coordinator that pre‑computes Hebrew months and events."""
-
+"""Coordinator that pre‑computes Hebrew calendar data using *hdate*."""
 from __future__ import annotations
+
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any, Dict
 
-from hebcal import HDate, HebrewCalendar, Location, Zmanim
-
+import hdate  # installed automatically from manifest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DOMAIN, DEFAULT_UPDATE_HOURS
+from .const import DEFAULT_UPDATE_HOURS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-class JewishCalendarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
-    """Collect and cache Hebrew calendar data."""
+# ---------------------------------------------------------------------------
+# Helper functions that rely only on hdate.HDateInfo (no heavy math required)
+# ---------------------------------------------------------------------------
 
-    def __init__(self, hass: HomeAssistant, loc_conf: dict, session) -> None:
-        self._loc_conf = loc_conf
-        self._location = Location(
-            loc_conf["lat"], loc_conf["lon"], loc_conf["tz"], "UserLocation"
-        )
-        self.session = session
+def rosh_chodesh_for(greg: date) -> date:
+    """Return the Gregorian date of *Rosh Chodesh* for the month that `greg` is in."""
+    g = greg
+    while hdate.HDateInfo(g).get_hebrew_day() != 1:
+        g -= timedelta(days=1)
+    return g
+
+def next_month_rosh(greg_rosh: date) -> date:
+    """Return Gregorian date of next Hebrew month's Rosh Chodesh."""
+    g = greg_rosh + timedelta(days=1)
+    while hdate.HDateInfo(g).get_hebrew_day() != 1:
+        g += timedelta(days=1)
+    return g
+
+# ---------------------------------------------------------------------------
+class JewishCalendarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
+    """Download‑less, purely calculative coordinator for the Jewish calendar."""
+
+    def __init__(self, hass: HomeAssistant, loc_conf: dict,):
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(hours=DEFAULT_UPDATE_HOURS),
         )
+        self._loc_conf = loc_conf
+        self._location = hdate.Location(
+            loc_conf["lat"], loc_conf["lon"], "UserLocation"
+        )
 
-    # ---------------------------------------------------------------------
-    # public helpers
-    # ---------------------------------------------------------------------
+    # ─────────────────────────────────────────────────────────────
+    async def _async_update_data(self) -> Dict[str, Any]:
+        # default refresh pulls 12 future months
+        return await self._build_month_cache(12)
+
     async def async_prefetch(self, months_ahead: int) -> None:
-        """Fill cache up to given months ahead and write state update."""
-        await self._async_update_data(months_ahead)
+        self.data = await self._build_month_cache(months_ahead)
         self.async_set_updated_data(self.data)
 
-    # ---------------------------------------------------------------------
-    # Data generation
-    # ---------------------------------------------------------------------
-    async def _async_update_data(self, months_ahead: int = 12) -> Dict[str, Any]:
+    # ─────────────────────────────────────────────────────────────
+    async def _build_month_cache(self, months_ahead: int) -> Dict[str, Any]:
         today = date.today()
-        current = HDate(today).start_of_hebrew_month()
+        rosh = rosh_chodesh_for(today)
+        cache: Dict[str, Any] = {}
+        for _ in range(months_ahead + 1):  # include current month
+            cache[rosh.isoformat()] = await self._build_month(rosh)
+            rosh = next_month_rosh(rosh)
+        return cache
 
-        months: list[HDate] = [current]
-        for _ in range(months_ahead):
-            months.append(months[-1].next_hebrew_month())
+    async def _build_month(self, rosh_greg: date) -> Dict[str, Any]:
+        """Return structured JSON for one Hebrew month starting at `rosh_greg`."""
+        month_info = hdate.HDateInfo(rosh_greg)
+        heb_month = month_info.get_hebrew_month()
+        heb_year = month_info.get_hebrew_year()
+        title = f"{month_info.get_hebrew_month_name_he()} {month_info.get_hebrew_year_he()}"
 
-        payload: Dict[str, Any] = {}
-        for m in months:
-            payload[m.greg().isoformat()] = await self._build_month_async(m)
-        return payload
-
-    async def _build_month_async(self, rosh: HDate) -> Dict[str, Any]:
-        month_days = []
-        hd = rosh.clone()
-        while hd.month == rosh.month:
-            greg = hd.greg()
-            day_dict = {
-                "hd": hd.hebrew(),
-                "greg": greg.isoformat(),
-                "holiday": HebrewCalendar.get_holiday_description(hd, self._location),
-                "parasha": HebrewCalendar.get_parasha(hd, israel=self._loc_conf["israel"]),
-                "zmanim": self._calc_zmanim(greg),
-            }
-            month_days.append(day_dict)
-            hd = hd.next()
+        # Iterate day‑by‑day until Hebrew month rolls over
+        days: list[Dict[str, Any]] = []
+        g = rosh_greg
+        while hdate.HDateInfo(g).get_hebrew_month() == heb_month:
+            info = hdate.HDateInfo(g)
+            days.append(
+                {
+                    "hd": info.hebrew_date_he(),
+                    "greg": g.isoformat(),
+                    "holiday": info.holiday_description() or "",
+                    "parasha": (
+                        info.parasha_he()
+                        if self._loc_conf["israel"]
+                        else info.parasha_he_diaspora()
+                    ),
+                    "omer": info.omer(),
+                    "zmanim": self._calc_zmanim(g),
+                }
+            )
+            g += timedelta(days=1)
 
         return {
-            "title": f"{rosh.getMonthName()} {rosh.getFullYearGematriya()}",
-            "month": rosh.month,
-            "year": rosh.year,
-            "days": month_days,
+            "title": title,
+            "month": heb_month,
+            "year": heb_year,
+            "days": days,
         }
 
     def _calc_zmanim(self, greg: date) -> Dict[str, str]:
         try:
-            z = Zmanim(self._location, greg)
+            z = hdate.Zmanim(self._location, greg)
             return {
                 "sunrise": z.sunrise.isoformat(),
                 "sunset": z.sunset.isoformat(),
                 "candle_lighting": z.candle_lighting(18).isoformat(),
                 "havdalah": z.tzais().isoformat(),
             }
-        except Exception as err:  # pragma: no cover – runtime safety
-            _LOGGER.debug("Zmanim error: %s", err)
+        except Exception as err:
+            _LOGGER.debug("Zmanim error for %s: %s", greg, err)
             return {}

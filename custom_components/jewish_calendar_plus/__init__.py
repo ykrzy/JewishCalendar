@@ -1,16 +1,11 @@
 """Init for Jewish Calendar Plus integration."""
 from __future__ import annotations
-
 import logging
 from datetime import timedelta
-
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_TIME_ZONE
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import aiohttp_client
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.helpers.platform import async_forward_entry_setups
-
 from .const import (
     DOMAIN,
     DATA_COORDINATOR,
@@ -18,47 +13,34 @@ from .const import (
     SERVICE_PREFETCH,
     ATTR_MONTHS_AHEAD,
 )
-from .coordinator import JewishCalendarCoordinator
-
-PLATFORMS = ["sensor", "calendar"]
 
 _LOGGER = logging.getLogger(__name__)
+PLATFORMS = ["sensor", "calendar"]
 
-def _get_location(entry: ConfigEntry) -> dict:
-    data = entry.data
-    return {
-        "lat": data[CONF_LATITUDE],
-        "lon": data[CONF_LONGITUDE],
-        "tz": data[CONF_TIME_ZONE],
-        "israel": data[CONF_ISRAEL],
-    }
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up via YAML is not supported."""
+# ─────────────────────────────────────────────────────────────
+async def async_setup(hass: HomeAssistant, config) -> bool:
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Jewish Calendar Plus from a config entry."""
-    session = aiohttp_client.async_get_clientsession(hass)
-    coordinator = JewishCalendarCoordinator(hass, _get_location(entry), session)
+    # Import here so that hdate dependency is installed first
+    from .coordinator import JewishCalendarCoordinator
 
-    await coordinator.async_config_entry_first_refresh()
+    coord = JewishCalendarCoordinator(
+        hass,
+        {
+            "lat": entry.data[CONF_LATITUDE],
+            "lon": entry.data[CONF_LONGITUDE],
+            "israel": entry.data[CONF_ISRAEL],
+        },
+    )
+    await coord.async_config_entry_first_refresh()
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_COORDINATOR: coord}
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        DATA_COORDINATOR: coordinator,
-    }
-
-    async def _handle_prefetch(call: ServiceCall) -> None:
-        months = call.data.get(ATTR_MONTHS_AHEAD, 6)
-        await coordinator.async_prefetch(months)
+    async def _service_prefetch(call: ServiceCall):
+        await coord.async_prefetch(call.data.get(ATTR_MONTHS_AHEAD, 6))
 
     if SERVICE_PREFETCH not in hass.services.async_services().get(DOMAIN, {}):
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_PREFETCH,
-            _handle_prefetch,
-            schema=None,
-        )
+        hass.services.async_register(DOMAIN, SERVICE_PREFETCH, _service_prefetch)
 
     await async_forward_entry_setups(entry, PLATFORMS)
     return True
