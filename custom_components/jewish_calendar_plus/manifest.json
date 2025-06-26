@@ -1,7 +1,7 @@
 {
   "domain": "jewish_calendar_plus",
   "name": "Jewish Calendar Plus",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "config_flow": true,
   "documentation": "https://github.com/yourname/jewish_calendar_plus",
   "requirements": [

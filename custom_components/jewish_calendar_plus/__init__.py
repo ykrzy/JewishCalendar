@@ -1,11 +1,11 @@
 """Init for Jewish Calendar Plus integration."""
 from __future__ import annotations
+
 import logging
-from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
-from homeassistant.helpers.platform import async_forward_entry_setups
+from homeassistant.core import HomeAssistant, ServiceCall
+
 from .const import (
     DOMAIN,
     DATA_COORDINATOR,
@@ -17,13 +17,14 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "calendar"]
 
-# ─────────────────────────────────────────────────────────────
-async def async_setup(hass: HomeAssistant, config) -> bool:
+async def async_setup(hass: HomeAssistant, _config) -> bool:
+    """Set up via YAML (noop)."""
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    # Import here so that hdate dependency is installed first
-    from .coordinator import JewishCalendarCoordinator
+    """Load the integration from a config entry."""
+    # Delay import until requirements installed
+    from .coordinator import JewishCalendarCoordinator  # pylint: disable=import-error
 
     coord = JewishCalendarCoordinator(
         hass,
@@ -34,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         },
     )
     await coord.async_config_entry_first_refresh()
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_COORDINATOR: coord}
 
     async def _service_prefetch(call: ServiceCall):
@@ -42,10 +44,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if SERVICE_PREFETCH not in hass.services.async_services().get(DOMAIN, {}):
         hass.services.async_register(DOMAIN, SERVICE_PREFETCH, _service_prefetch)
 
-    await async_forward_entry_setups(entry, PLATFORMS)
+    # Forward entry setup to platforms
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    unload_ok = await async_forward_entry_setups(entry, [])
-    hass.data[DOMAIN].pop(entry.entry_id)
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    hass.data[DOMAIN].pop(entry.entry_id, None)
     return unload_ok
