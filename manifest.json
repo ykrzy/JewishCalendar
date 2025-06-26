@@ -1,0 +1,12 @@
+{
+  "domain": "jewish_calendar_plus",
+  "name": "Jewish Calendar Plus",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/yourname/jewish_calendar_plus",
+  "requirements": [
+    "hebcal==1.4.1"
+  ],
+  "iot_class": "local_push",
+  "codeowners": ["@yourgithubhandle"]
+}
