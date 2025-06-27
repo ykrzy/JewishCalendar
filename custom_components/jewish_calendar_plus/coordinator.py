@@ -100,7 +100,7 @@ class JewishCalendarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         hebrew_date = info.hdate  # HebrewDate object
         heb_month = hebrew_date.month.value if hasattr(hebrew_date.month, "value") else hebrew_date.month
         heb_year = hebrew_date.year
-        is_leap = hdate.HebrewDate.is_leap_year(hebrew_date)
+        is_leap = hebrew_date.is_leap_year()
         title = f"{_month_name_he(heb_month, is_leap)} {hebrew_date.year}"
 
         days: List[Dict[str, Any]] = []
@@ -109,11 +109,11 @@ class JewishCalendarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             di = hdate.HDateInfo(g)
             days.append(
                 {
-                    "hd": di.hebrew_date_he(),
+                    "hd": str(di.hdate),
                     "greg": g.isoformat(),
-                    "holiday": di.holiday_description() or "",
+                    "holiday": ", ".join(str(h) for h in di.holidays) if di.holidays else "",
                     "parasha": di.parasha if self._loc_conf["israel"] else di.parasha,  # same property returns correct locale internally
-                    "omer": di.omer.number if di.omer else 0,
+                    "omer": di.omer.total_days if di.omer else 0,
                     "zmanim": self._calc_zmanim(g),
                 }
             )
