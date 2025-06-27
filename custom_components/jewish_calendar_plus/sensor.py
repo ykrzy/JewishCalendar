@@ -45,13 +45,18 @@ class HebrewDateSensor(_JCPSensorBase):
     @property
     def native_value(self):
         today = date.today().isoformat()
-        # find today in any month payload
         for month in self.coordinator.data.values():
             for d in month["days"]:
                 if d["greg"] == today:
                     return d["hd"]
         return None
 
+    @property
+    def extra_state_attributes(self):
+        # <<< ADD THIS METHOD (or merge if already present) >>>
+        return {
+            "month_cache": self.coordinator.data
+        }
 
 class ParashaSensor(_JCPSensorBase):
     def __init__(self, coordinator):
