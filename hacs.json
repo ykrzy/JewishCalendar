@@ -1,5 +1,13 @@
 {
   "name": "Jewish Calendar Plus",
   "content_in_root": false,
-  "category": "integration"
+  "domains": ["sensor", "calendar"],
+  "country": "US",
+  "render_readme": true,
+  "lovelace": {
+    "mode": "yaml",
+    "resources": [
+      "hebrew-month-view.js"
+    ]
+  }
 }
