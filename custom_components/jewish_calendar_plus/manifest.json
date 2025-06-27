@@ -6,7 +6,7 @@
   "resources": [
     "www/hebrew-month-view.js"
   ],
-  "render_readme" true,
+  "render_readme": true,
   "documentation": "https://github.com/yourname/jewish_calendar_plus",
   "requirements": [
     "hdate>=1.1.0"
