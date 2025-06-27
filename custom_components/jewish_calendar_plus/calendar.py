@@ -39,12 +39,16 @@ class JewishCalendarEntity(CoordinatorEntity, CalendarEntity):
     # ------------------------------------------------------------------
     async def async_get_events(self, hass, start_date, end_date):
         events: List[CalendarEvent] = []
+        start_d = start_date.date()
+        end_d = end_date.date()
         for month in self.coordinator.data.values():
             for d in month["days"]:
-                g = datetime.fromisoformat(d["greg"])
-                if start_date <= g.date() <= end_date and d["holiday"]:
-                    events.append(CalendarEvent(g, g, d["holiday"]))
+                g_dt = datetime.fromisoformat(d["greg"])
+                g_d = g_dt.date()
+                if start_d <= g_d <= end_d and d["holiday"]:
+                    events.append(CalendarEvent(g_dt, g_dt, d["holiday"]))
         return events
+
 
     @property
     def event(self):
