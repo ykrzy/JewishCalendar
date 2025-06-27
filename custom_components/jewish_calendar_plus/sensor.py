@@ -25,6 +25,7 @@ async def async_setup_entry(
     sensors = [
         HebrewDateSensor(coordinator),
         ParashaSensor(coordinator),
+        HebrewMonthSensor(coordinator),
     ]
     async_add_entities(sensors)
 
@@ -70,3 +71,25 @@ class ParashaSensor(_JCPSensorBase):
                 if d["greg"] == today:
                     return d["parasha"] or ""
         return ""
+    
+class HebrewMonthSensor(CoordinatorEntity, SensorEntity):
+    _attr_name = "JCP Active Month"
+    _attr_icon = "mdi:calendar-blank"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self._anchor = _find_rosh_chodesh(date.today())   # month shown by default
+
+    @property
+    def native_value(self):
+        # ISO string of anchor – handy if you want it in automations
+        return self._anchor.isoformat()
+
+    @property
+    def extra_state_attributes(self):
+        month = self.coordinator._cache.get(self.native_value) or {}
+        return {"month": month}
+
+    async def async_set_anchor(self, rosh: date):
+        self._anchor = rosh
+        await self.coordinator.async_get_month(rosh)

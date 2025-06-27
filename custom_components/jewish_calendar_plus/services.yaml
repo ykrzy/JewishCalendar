@@ -12,3 +12,11 @@ prefetch:
           unit_of_measurement: months
       default: 6
       description: "How many additional months ahead to calculate."
+
+navigate:
+  name: Prefetch and focus a Hebrew month
+  fields:
+    rosh_chodesh:
+      selector:
+        text:
+      description: "Gregorian date of Rosh Chodesh (YYYY-MM-DD)"

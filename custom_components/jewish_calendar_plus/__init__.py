@@ -21,6 +21,11 @@ async def async_setup(hass: HomeAssistant, _config) -> bool:
     """Set up via YAML (noop)."""
     return True
 
+async def _svc_navigate(call):
+    rosh = datetime.date.fromisoformat(call.data["rosh_chodesh"])
+    sensor = hass.data[DOMAIN][entry.entry_id]["sensor"]  # store ref on setup
+    await sensor.async_set_anchor(rosh)
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Load the integration from a config entry."""
     # Delay import until requirements installed
