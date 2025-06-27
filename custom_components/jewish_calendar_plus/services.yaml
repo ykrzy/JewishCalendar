@@ -14,14 +14,6 @@ prefetch:
       description: "How many additional months ahead to calculate."
 
 navigate:
-  name: Prefetch and focus a Hebrew month
-  fields:
-    rosh_chodesh:
-      selector:
-        text:
-      description: "Gregorian date of Rosh Chodesh (YYYY-MM-DD)"
-
-navigate:
   name: Navigate to month
   description: Fetch specified Hebrew month into cache and update active sensor.
   fields:
