@@ -17,28 +17,41 @@ from .const import DEFAULT_UPDATE_HOURS, DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────
-# Hebrew month helper
+# Hebrew month helper – use str(hebrew_date.month)
 # ─────────────────────────────────────────────────────────────
 _MONTH_NAMES = [
-    "",  # padding so indices match 1‑based months
-    "ניסן",
-    "אייר",
-    "סיון",
-    "תמוז",
-    "אב",
-    "אלול",
-    "תשרי",
-    "חשוון",
-    "כסלו",
-    "טבת",
-    "שבט",
-    "אדר",    # 12 – Adar (or Adar I in leap year)
-    "אדר ב׳",  # 13 – Adar II
+    "",  # 0 (unused)
+    "תשרי",   # 1
+    "חשוון",  # 2
+    "כסלו",   # 3
+    "טבת",    # 4
+    "שבט",    # 5
+    "אדר",    # 6 – Adar in non‑leap
+    "אדר א׳", # 7 – Adar I (leap)
+    "אדר ב׳", # 8 – Adar II (leap)
+    "ניסן",   # 9
+    "אייר",   # 10
+    "סיון",   # 11
+    "תמוז",   # 12
+    "אב",     # 13
+    "אלול",   # 14
 ]
 
 def _month_name_he(month: int, leap: bool) -> str:
-    if leap and month == 12:
-        return "אדר א׳"
+    """Return Hebrew month name by numeric value.
+
+    The `month` parameter corresponds to `Months.value` in py‑libhdate,
+    which ranges 1–14 inclusive.
+    In a leap year:
+      • 6→"אדר" (Adar)
+      • 7→"אדר א׳" (Adar I)
+      • 8→"אדר ב׳" (Adar II)
+    In a non‑leap year month 7 and 8 never occur.
+    """
+    if not leap and month in (7, 8):
+        # Should never happen – fallback to Adar
+        return "אדר"
+    return _MONTH_NAMES[month]"אדר א׳"
     return _MONTH_NAMES[month]
 
 # ─────────────────────────────────────────────────────────────
@@ -101,7 +114,7 @@ class JewishCalendarCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         heb_month = hebrew_date.month.value if hasattr(hebrew_date.month, "value") else hebrew_date.month
         heb_year = hebrew_date.year
         is_leap = hebrew_date.is_leap_year()
-        title = f"{_month_name_he(heb_month, is_leap)} {hebrew_date.year}"
+        title = f"{hebrew_date.month} {hebrew_date.year}"
 
         days: List[Dict[str, Any]] = []
         g = rosh_greg
