@@ -29,6 +29,11 @@ async def async_setup_entry(
     ]
     async_add_entities(sensors)
 
+def _find_rosh_chodesh(g: date) -> date:
+    while hdate.HDateInfo(g).hdate.day != 1:
+        g -= timedelta(days=1)
+    return g
+
 
 class _JCPSensorBase(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True

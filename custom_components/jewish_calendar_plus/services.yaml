@@ -20,3 +20,13 @@ navigate:
       selector:
         text:
       description: "Gregorian date of Rosh Chodesh (YYYY-MM-DD)"
+
+navigate:
+  name: Navigate to month
+  description: Fetch specified Hebrew month into cache and update active sensor.
+  fields:
+    rosh_chodesh:
+      required: true
+      selector:
+        text:
+      description: Gregorian date of Rosh Chodesh in ISO format YYYY-MM-DD
