@@ -1,0 +1,72 @@
+title: Hebrew Jewish Calendar
+path: hebrew-calendar
+icon: mdi:calendar-month-outline
+theme: default
+background: var(--lovelace-background)
+
+# Define the resource first
+resources:
+  - url: /local/community/hebrew-jewish-calendar-dashboard/hebrew-jewish-calendar-card.js
+    type: module
+
+views:
+  - title: Calendar
+    path: calendar
+    icon: mdi:calendar
+    cards:
+      - type: custom:hebrew-jewish-calendar-card
+        show_header: true
+        default_view: month
+
+  - title: Settings
+    path: settings
+    icon: mdi:cog
+    cards:
+      - type: markdown
+        content: |
+          # Hebrew Jewish Calendar Settings
+          
+          ## View Options
+          The calendar supports three view modes:
+          - **Month View** (חודש) - Traditional monthly calendar
+          - **Week View** (שבוע) - Weekly layout with detailed information  
+          - **Day View** (יום) - Single day with expanded details
+          
+          ## Navigation
+          - Use the arrow buttons (❮ ❯) to navigate between periods
+          - Click any date in month/week view to jump to day view
+          - Use the view switcher buttons to change between views
+          
+          ## Features
+          - Hebrew dates with Gematriya notation
+          - Jewish holidays in Hebrew
+          - Weekly Torah portion (Parasha)
+          - Candle lighting times 🕯️
+          - Havdalah times ⭐
+          - Automatic location-based zmanim
+          
+          ## Configuration
+          This calendar uses your Home Assistant location settings for accurate ritual times.
+          
+          ---
+          
+          **Tip:** Bookmark this dashboard for quick access to your Jewish calendar!
+
+      - type: entities
+        title: Location Information
+        show_header_toggle: false
+        entities:
+          - entity: sensor.date
+            name: Current Date
+          - entity: sensor.time
+            name: Current Time
+        footer:
+          type: custom:mini-graph-card
+          entities:
+            - sensor.sun_next_rising
+            - sensor.sun_next_setting
+          name: Sun Times
+          height: 50
+          show:
+            legend: false
+            icon: false
