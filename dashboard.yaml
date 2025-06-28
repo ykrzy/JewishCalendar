@@ -6,7 +6,7 @@ background: var(--lovelace-background)
 
 # Define the resource first
 resources:
-  - url: /local/community/hebrew-jewish-calendar-dashboard/hebrew-jewish-calendar-card.js
+  - url: /local/community/JewishCalendar/www/hebrew-jewish-calendar-card.js
     type: module
 
 views:
