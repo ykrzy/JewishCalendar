@@ -1,13 +1,8 @@
 {
-  "name": "Jewish Calendar Plus",
-  "content_in_root": false,
-  "domains": ["sensor", "calendar"],
-  "country": "US",
+  "name": "Hebrew Jewish Calendar Card",
+  "content_in_root": true,
   "render_readme": true,
-  "lovelace": {
-    "mode": "yaml",
-    "resources": [
-      "hebrew-month-view.js"
-    ]
-  }
+  "description": "Full monthly Jewish calendar Lovelace card.",
+  "category": "plugin",
+  "file": "hebrew-jewish-calendar-card.js"
 }
