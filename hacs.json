@@ -1,8 +1,8 @@
 {
-  "name": "Hebrew Jewish Calendar Card",
+  "name": "Hebrew Jewish Calendar Dashboard",
   "content_in_root": true,
   "render_readme": true,
-  "description": "Full monthly Jewish calendar Lovelace card.",
-  "category": "plugin",
-  "file": "hebrew-jewish-calendar-card.js"
+  "description": "Complete Hebrew Jewish calendar dashboard with day, week, and month views.",
+  "category": "dashboard",
+  "filename": "dashboard.yaml"
 }
