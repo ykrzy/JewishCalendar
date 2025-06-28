@@ -1,6 +1,6 @@
 {
   "name": "Hebrew Jewish Calendar Dashboard",
-  "content_in_root": false,
+  "content_in_root": true,
   "render_readme": true,
   "description": "Complete Hebrew Jewish calendar dashboard with day, week, and month views.",
   "category": "dashboard",
